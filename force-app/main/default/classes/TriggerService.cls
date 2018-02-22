@@ -85,16 +85,18 @@ global with sharing class TriggerService {
         // Update the context for the service
         TriggerService service = servicesByName.get(name);
 
+        TriggerContext context = new TriggerContext();
+
         // If the object supports rerun workflows, refresh the context if
         // a rerun scenario is possible. Since delete operations cannot possibly
         // cause a rerun, we only need to check for reruns for non-delete 
         // DML operations. More specifically, reruns themselves manifest
         // as update operations, so we only need to check whether the current
         // DML context is `before update`..
-        if (Trigger.isBefore && Trigger.isUpdate) {
+        if (context.isBefore && context.isUpdate) {
             if (TriggerWorkflowUtil.isRerunSupported(
-                    Trigger.new[0].getSObjectType())) {
-                refreshContext(service);
+                    context.getNew()[0].getSObjectType())) {
+                refreshContext(service, context);
             }
         }
 
@@ -134,7 +136,7 @@ global with sharing class TriggerService {
         Boolean isRegistered =
                 this.workflowsByName.containsKey(workflowType.getName());
 
-        if (Trigger.isBefore || !isRegistered) {
+        if (this.context.isBefore || !isRegistered) {
 
             // Initialize a new instance of the workflow
             TriggerWorkflow workflow =
@@ -180,13 +182,14 @@ global with sharing class TriggerService {
      * Refresh the context for a service, specifically to note whether the
      * trigger is executing again as a result of a field update.
      */
-    global static void refreshContext(TriggerService service) {
+    global static void refreshContext(
+            TriggerService service, TriggerContext newContext) {
 
         // Assume not a rerun
         Boolean rerun = false;
 
         // Check the records and unset `IsProcessed__c` if a rerun is detected
-        for (Sobject eachRecord : Trigger.new) {
+        for (Sobject eachRecord : newContext.getNew()) {
             if (eachRecord.get('IsProcessed__c') == true) {
                 rerun = true;
                 eachRecord.put('IsProcessed__c', false);

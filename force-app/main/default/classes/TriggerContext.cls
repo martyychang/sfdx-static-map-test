@@ -6,17 +6,27 @@
  */
 global with sharing class TriggerContext {
 
+    global Boolean isBefore { get; set; }
+
     /**
      * Whether the trigger is handling `before update` and `after update`
      * events that were fired as a result of a workflow field update.
      */
     global Boolean isRerun { get; set; }
 
+    global Boolean isUpdate { get; set; }
+
     /**
      * Default constructor, which assumes this context object is being
      * initialized in the very first `Trigger.isBefore` context.
      */
 	global TriggerContext() {
-        this.isRerun = false;		
+        this.isBefore = false;
+        this.isRerun = false;
+        this.isUpdate = false;
 	}
+
+    global List<SObject> getNew() {
+        return new List<SObject>();
+    }
 }
